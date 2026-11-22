@@ -1,0 +1,9 @@
+package main
+
+templ UserListPage(table templ.Component) {
+	<div class="d-flex align-items-center justify-content-between mb-3">
+		<h1 class="h2 mb-0">Users</h1>
+		<a class="btn btn-primary" href="/admin/users/new">Add User</a>
+	</div>
+	@table
+}

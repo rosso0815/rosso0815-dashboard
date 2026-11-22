@@ -1,0 +1,25 @@
+package admin
+
+type DeleteConfig struct {
+	Title       string
+	ItemLabel   string
+	Action      string
+	CancelHref  string
+}
+
+templ DeleteConfirmation(config DeleteConfig) {
+	<section>
+		<div class="d-flex align-items-center justify-content-between mb-3">
+			<h1 class="h2 mb-0">{ config.Title }</h1>
+		</div>
+		<div class="card p-4">
+			<p>Delete <strong>{ config.ItemLabel }</strong>?</p>
+			<form method="post" action={ config.Action }>
+				<div class="d-flex gap-2">
+					<button class="btn btn-danger" type="submit">Confirm delete</button>
+					<a class="btn btn-outline-secondary" href={ templ.SafeURL(config.CancelHref) }>Cancel</a>
+				</div>
+			</form>
+		</div>
+	</section>
+}

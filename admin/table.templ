@@ -1,0 +1,49 @@
+package admin
+
+templ Table(config TableConfig) {
+	<div class="card overflow-auto">
+		if len(config.Rows) == 0 {
+			<div class="py-4 text-center text-secondary">
+				if config.EmptyText == "" {
+					No entries found
+				} else {
+					{ config.EmptyText }
+				}
+			</div>
+		} else {
+			<table class="table table-striped table-hover align-middle mb-0">
+				<thead>
+					<tr>
+						for _, column := range config.Columns {
+							<th scope="col">{ column.Label }</th>
+						}
+						if config.EditHref != nil || config.DeleteHref != nil {
+							<th scope="col">Actions</th>
+						}
+					</tr>
+				</thead>
+				<tbody>
+					for _, row := range config.Rows {
+						<tr>
+							for _, column := range config.Columns {
+								<td>{ row.Values[column.Key] }</td>
+							}
+							if config.EditHref != nil || config.DeleteHref != nil {
+								<td>
+									<div class="d-flex gap-2 flex-wrap">
+										if config.EditHref != nil {
+											<a class="btn btn-sm btn-outline-secondary" href={ templ.SafeURL(config.EditHref(row.ID)) }>Edit</a>
+										}
+										if config.DeleteHref != nil {
+											<a class="btn btn-sm btn-danger" href={ templ.SafeURL(config.DeleteHref(row.ID)) }>Delete</a>
+										}
+									</div>
+								</td>
+							}
+						</tr>
+					}
+				</tbody>
+			</table>
+		}
+	</div>
+}

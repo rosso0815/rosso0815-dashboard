@@ -1,0 +1,40 @@
+package admin
+
+templ ResourceForm(config FormConfig) {
+	<section>
+		<div class="d-flex align-items-center justify-content-between mb-3">
+			<h1 class="h2 mb-0">{ config.Title }</h1>
+		</div>
+		if len(config.Errors) > 0 {
+			<div class="alert alert-danger" role="alert">
+				for _, message := range config.Errors {
+					<div>{ message }</div>
+				}
+			</div>
+		}
+		<form class="col-12 col-xl-8" method={ config.Method } action={ config.Action }>
+			for _, field := range config.Fields {
+				<div class="mb-3">
+					<label class="form-label" for={ field.Name }>{ field.Label }</label>
+					if field.Type == "" {
+						<input class="form-control" type="text" id={ field.Name } name={ field.Name } value={ field.Value } placeholder={ field.Placeholder } required?={ field.Required }/>
+					} else {
+						<input class="form-control" type={ field.Type } id={ field.Name } name={ field.Name } value={ field.Value } placeholder={ field.Placeholder } required?={ field.Required }/>
+					}
+				</div>
+			}
+			<div class="d-flex gap-2">
+				<button class="btn btn-primary" type="submit">
+					if config.SubmitLabel == "" {
+						Save
+					} else {
+						{ config.SubmitLabel }
+					}
+				</button>
+				if config.CancelHref != "" {
+					<a class="btn btn-outline-secondary" href={ templ.SafeURL(config.CancelHref) }>Cancel</a>
+				}
+			</div>
+		</form>
+	</section>
+}
