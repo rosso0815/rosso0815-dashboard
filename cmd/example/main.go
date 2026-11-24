@@ -83,7 +83,10 @@ func (s *UserStore) Delete(id int) bool {
 	return true
 }
 
-var nav = []admin.NavItem{{Label: "Users", Href: "/admin/users"}}
+var nav = []admin.NavItem{
+	{Label: "Users 1", Href: "/admin/users"},
+	{Label: "Profile", Href: "/admin/profile"},
+}
 
 func NewMux(store *UserStore) *http.ServeMux {
 	mux := http.NewServeMux()
@@ -251,5 +254,6 @@ func render(w http.ResponseWriter, r *http.Request, component templ.Component) {
 func main() {
 	store := NewUserStore()
 	log.Println("Admin dashboard listening on http://localhost:8080")
+	log.Println("size of nav", len(nav))
 	log.Fatal(http.ListenAndServe(":8080", NewMux(store)))
 }

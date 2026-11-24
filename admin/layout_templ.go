@@ -39,7 +39,7 @@ func Layout(title string, nav []NavItem, currentPath string, content templ.Compo
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</title></head><body class=\"bg-light\"><div class=\"container-fluid p-0\"><div class=\"row g-0 min-vh-100\"><aside class=\"col-auto col-md-3 col-lg-2 bg-dark text-white p-2 p-md-3\"><a class=\"d-none d-md-block mb-4 fw-bold text-white text-decoration-none\" href=\"/\">Admin Dashboard</a> <a class=\"d-md-none mb-4 fw-bold text-white text-decoration-none\" href=\"/\" aria-label=\"Admin Dashboard\">A</a><nav class=\"nav nav-pills flex-column\" aria-label=\"Admin navigation\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</title></head><body class=\"bg-light\"><div class=\"container-fluid p-0\"><div class=\"row g-0 min-vh-100\"><aside class=\"col-auto col-md-3 col-lg-2 bg-light text-black p-2 p-md-3\"><a class=\"d-none d-md-block mb-4 fw-bold text-white text-decoration-none\" href=\"/\">Admin Dashboard</a> <a class=\"d-md-none mb-4 fw-bold text-white text-decoration-none\" href=\"/\" aria-label=\"Admin Dashboard\">A</a><nav class=\"nav nav-pills flex-column\" aria-label=\"Admin navigation\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -71,12 +71,12 @@ func Layout(title string, nav []NavItem, currentPath string, content templ.Compo
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</a>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, " 1</a>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<a class=\"nav-link text-white mb-1\" href=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<a class=\"nav-link text-black mb-1\" href=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
