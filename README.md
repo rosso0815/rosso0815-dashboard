@@ -5,14 +5,22 @@ A reusable server-rendered admin dashboard library for Go applications using
 
 ## Run the example
 
-The example uses demonstration-only in-memory persistence:
+Install [Task](https://taskfile.dev/docs/installation) and the templ CLI
+before running the example. The example uses demonstration-only in-memory
+persistence:
 
 ```sh
-templ generate ./...
-go run ./cmd/example
+task generate
+task run
 ```
 
 Open `http://localhost:8080/admin/users`.
+
+Run the complete test suite with:
+
+```sh
+task test
+```
 
 ## Styling
 

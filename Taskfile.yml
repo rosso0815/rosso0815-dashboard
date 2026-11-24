@@ -1,0 +1,22 @@
+version: '3'
+
+tasks:
+  generate:
+    desc: Generate templ sources
+    cmds:
+      - templ generate ./...
+
+  test:
+    desc: Run the Go test suite
+    cmds:
+      - go test ./...
+
+  build:
+    desc: Build the example application
+    cmds:
+      - go build -o ./tmp/main ./cmd/example
+
+  run:
+    desc: Run the example application
+    cmds:
+      - go run ./cmd/example
