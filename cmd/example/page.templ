@@ -1,9 +1,18 @@
 package main
 
-templ UserListPage(table templ.Component) {
-	<div class="d-flex align-items-center justify-content-between mb-3">
-		<h1 class="h2 mb-0">Users</h1>
-		<a class="btn btn-primary" href="/admin/users/new">Add User</a>
-	</div>
-	@table
+templ ProfilePage() {
+	<section>
+		<div class="d-flex align-items-center justify-content-between mb-3">
+			<h1 class="h2 mb-0">Profile</h1>
+		</div>
+		<div class="card p-4">
+			<h2 class="h5 mb-2">Example Administrator</h2>
+			<p class="text-secondary mb-3">
+				This page demonstrates multi-item sidebar navigation and active-route highlighting using the shared admin layout.
+			</p>
+			<div>
+				<a class="btn btn-outline-primary" href="/admin/users">Manage Users</a>
+			</div>
+		</div>
+	</section>
 }

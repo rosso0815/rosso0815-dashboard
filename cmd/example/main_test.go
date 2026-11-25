@@ -26,6 +26,9 @@ func TestExampleCRUDFlows(t *testing.T) {
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "Ada Lovelace") {
 		t.Fatalf("list failed: status=%d", rec.Code)
 	}
+	if !strings.Contains(rec.Body.String(), "Add User") {
+		t.Fatal("list missing Add User button")
+	}
 
 	rec = postForm(t, mux, "/admin/users/new", url.Values{"name": {"Katherine Johnson"}, "email": {"katherine@example.com"}})
 	if rec.Code != http.StatusSeeOther {
@@ -36,7 +39,7 @@ func TestExampleCRUDFlows(t *testing.T) {
 	}
 
 	rec = postForm(t, mux, "/admin/users/new", url.Values{"name": {""}, "email": {"invalid"}})
-	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "Name is required") {
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "Name is required") || !strings.Contains(rec.Body.String(), "is-invalid") {
 		t.Fatalf("validation failed: status=%d", rec.Code)
 	}
 
@@ -71,7 +74,44 @@ func TestExampleCancelAndMissingEntry(t *testing.T) {
 	}
 
 	rec = postForm(t, mux, "/admin/users/999/edit", url.Values{"name": {"Nobody"}, "email": {"nobody@example.com"}})
-	if rec.Code != http.StatusNotFound {
-		t.Fatalf("missing edit status=%d", rec.Code)
+	if rec.Code != http.StatusNotFound || !strings.Contains(rec.Body.String(), "Entry Unavailable") {
+		t.Fatalf("missing edit status=%d body=%s", rec.Code, rec.Body.String())
+	}
+
+	rec = httptest.NewRecorder()
+	mux.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/admin/users/999/edit", nil))
+	if rec.Code != http.StatusNotFound || !strings.Contains(rec.Body.String(), "Entry Unavailable") {
+		t.Fatalf("missing edit GET status=%d", rec.Code)
+	}
+}
+
+func TestExampleNavigationAndEmptyState(t *testing.T) {
+	store := NewUserStore()
+	mux := NewMux(store)
+
+	// Root redirects to /admin/users
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/", nil))
+	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/admin/users" {
+		t.Fatalf("root redirect failed: status=%d loc=%q", rec.Code, rec.Header().Get("Location"))
+	}
+
+	// Profile nav route works and highlights Profile
+	rec = httptest.NewRecorder()
+	mux.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/admin/profile", nil))
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "Example Administrator") {
+		t.Fatalf("profile page failed: status=%d", rec.Code)
+	}
+	if !strings.Contains(rec.Body.String(), `href="/admin/profile" aria-current="page"`) {
+		t.Fatal("profile nav link not marked active")
+	}
+
+	// Empty state still shows EmptyText and Add User button
+	store.Delete(1)
+	store.Delete(2)
+	rec = httptest.NewRecorder()
+	mux.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/admin/users", nil))
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "No users found") || !strings.Contains(rec.Body.String(), "Add User") {
+		t.Fatalf("empty state failed: status=%d", rec.Code)
 	}
 }

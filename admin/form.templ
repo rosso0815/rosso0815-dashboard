@@ -1,5 +1,44 @@
 package admin
 
+import "sort"
+
+func sortedErrorMessages(errors map[string]string) []string {
+	if len(errors) == 0 {
+		return nil
+	}
+	keys := make([]string, 0, len(errors))
+	for k := range errors {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	messages := make([]string, 0, len(keys))
+	for _, k := range keys {
+		messages = append(messages, errors[k])
+	}
+	return messages
+}
+
+func formMethod(method string) string {
+	if method == "" {
+		return "post"
+	}
+	return method
+}
+
+func fieldInputClass(hasErr bool) string {
+	if hasErr {
+		return "form-control is-invalid"
+	}
+	return "form-control"
+}
+
+func fieldType(t string) string {
+	if t == "" {
+		return "text"
+	}
+	return t
+}
+
 templ ResourceForm(config FormConfig) {
 	<section>
 		<div class="d-flex align-items-center justify-content-between mb-3">
@@ -7,19 +46,27 @@ templ ResourceForm(config FormConfig) {
 		</div>
 		if len(config.Errors) > 0 {
 			<div class="alert alert-danger" role="alert">
-				for _, message := range config.Errors {
+				for _, message := range sortedErrorMessages(config.Errors) {
 					<div>{ message }</div>
 				}
 			</div>
 		}
-		<form class="col-12 col-xl-8" method={ config.Method } action={ config.Action }>
+		<form class="col-12 col-xl-8" method={ formMethod(config.Method) } action={ templ.SafeURL(config.Action) }>
 			for _, field := range config.Fields {
 				<div class="mb-3">
 					<label class="form-label" for={ field.Name }>{ field.Label }</label>
-					if field.Type == "" {
-						<input class="form-control" type="text" id={ field.Name } name={ field.Name } value={ field.Value } placeholder={ field.Placeholder } required?={ field.Required }/>
-					} else {
-						<input class="form-control" type={ field.Type } id={ field.Name } name={ field.Name } value={ field.Value } placeholder={ field.Placeholder } required?={ field.Required }/>
+					<input
+						class={ fieldInputClass(config.Errors[field.Name] != "") }
+						type={ fieldType(field.Type) }
+						id={ field.Name }
+						name={ field.Name }
+						value={ field.Value }
+						placeholder={ field.Placeholder }
+						required?={ field.Required }
+						aria-invalid?={ config.Errors[field.Name] != "" }
+					/>
+					if config.Errors[field.Name] != "" {
+						<div class="invalid-feedback">{ config.Errors[field.Name] }</div>
 					}
 				</div>
 			}

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"bytes"
 	"log"
 	"net/http"
 	"sort"
@@ -19,6 +19,7 @@ type User struct {
 	Email string
 }
 
+// UserStore provides demonstration-only thread-safe in-memory persistence.
 type UserStore struct {
 	mu     sync.RWMutex
 	users  map[int]User
@@ -84,110 +85,86 @@ func (s *UserStore) Delete(id int) bool {
 }
 
 var nav = []admin.NavItem{
-	{Label: "Users 1", Href: "/admin/users"},
+	{Label: "Users", Href: "/admin/users"},
 	{Label: "Profile", Href: "/admin/profile"},
 }
 
 func NewMux(store *UserStore) *http.ServeMux {
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /admin/users", func(w http.ResponseWriter, r *http.Request) {
-		users := store.List()
-		rows := make([]admin.TableRow, 0, len(users))
-		for _, user := range users {
-			rows = append(rows, admin.TableRow{
-				ID: strconv.Itoa(user.ID),
-				Values: map[string]string{
-					"name":  user.Name,
-					"email": user.Email,
-				},
-			})
-		}
-		table := admin.Table(admin.TableConfig{
-			Columns: []admin.TableColumn{
-				{Key: "name", Label: "Name"},
-				{Key: "email", Label: "Email"},
+
+	admin.RegisterResource(mux, admin.ResourceConfig{
+		BasePath:      "/admin/users",
+		Title:         "Users",
+		SingularTitle: "User",
+		Nav:           nav,
+		CurrentPath:   "/admin/users",
+		Columns: []admin.TableColumn{
+			{Key: "name", Label: "Name"},
+			{Key: "email", Label: "Email"},
+		},
+		EmptyText:   "No users found",
+		CreateLabel: "Add User",
+		Fields: []admin.FormField{
+			{Name: "name", Label: "Name", Required: true},
+			{Name: "email", Label: "Email", Type: "email", Required: true},
+		},
+		ItemLabel: func(row admin.TableRow) string {
+			return row.Values["name"]
+		},
+		Handlers: admin.ResourceHandlers{
+			List: func() ([]admin.TableRow, error) {
+				users := store.List()
+				rows := make([]admin.TableRow, 0, len(users))
+				for _, user := range users {
+					rows = append(rows, userToRow(user))
+				}
+				return rows, nil
 			},
-			Rows:       rows,
-			EmptyText:  "No users found",
-			CreateHref: "/admin/users/new",
-			EditHref:   func(id string) string { return "/admin/users/" + id + "/edit" },
-			DeleteHref: func(id string) string { return "/admin/users/" + id + "/delete" },
-		})
-		page := UserListPage(table)
-		render(w, r, admin.Layout("Users", nav, r.URL.Path, page))
+			Get: func(rawID string) (admin.TableRow, bool) {
+				id, ok := parseID(rawID)
+				if !ok {
+					return admin.TableRow{}, false
+				}
+				user, ok := store.Get(id)
+				if !ok {
+					return admin.TableRow{}, false
+				}
+				return userToRow(user), true
+			},
+			Create: func(values map[string]string) admin.SubmissionResult {
+				name, email, errors := validateUserValues(values)
+				if len(errors) > 0 {
+					return admin.SubmissionResult{Errors: errors}
+				}
+				store.Create(name, email)
+				return admin.SubmissionResult{Success: true}
+			},
+			Update: func(rawID string, values map[string]string) admin.SubmissionResult {
+				id, ok := parseID(rawID)
+				if !ok {
+					return admin.SubmissionResult{NotFound: true}
+				}
+				name, email, errors := validateUserValues(values)
+				if len(errors) > 0 {
+					return admin.SubmissionResult{Errors: errors}
+				}
+				if _, ok := store.Update(id, name, email); !ok {
+					return admin.SubmissionResult{NotFound: true}
+				}
+				return admin.SubmissionResult{Success: true}
+			},
+			Delete: func(rawID string) bool {
+				id, ok := parseID(rawID)
+				if !ok {
+					return false
+				}
+				return store.Delete(id)
+			},
+		},
 	})
 
-	mux.HandleFunc("GET /admin/users/new", func(w http.ResponseWriter, r *http.Request) {
-		render(w, r, admin.Layout("Add User", nav, "/admin/users", admin.ResourceForm(userForm("", "", "/admin/users/new", nil))))
-	})
-	mux.HandleFunc("POST /admin/users/new", func(w http.ResponseWriter, r *http.Request) {
-		name, email, errors := readUserForm(w, r)
-		if len(errors) > 0 {
-			render(w, r, admin.Layout("Add User", nav, "/admin/users", admin.ResourceForm(userForm(name, email, "/admin/users/new", errors))))
-			return
-		}
-		store.Create(name, email)
-		http.Redirect(w, r, "/admin/users", http.StatusSeeOther)
-	})
-
-	mux.HandleFunc("GET /admin/users/{id}/edit", func(w http.ResponseWriter, r *http.Request) {
-		id, ok := routeID(w, r)
-		if !ok {
-			return
-		}
-		user, ok := store.Get(id)
-		if !ok {
-			http.NotFound(w, r)
-			return
-		}
-		action := fmt.Sprintf("/admin/users/%d/edit", id)
-		render(w, r, admin.Layout("Edit User", nav, "/admin/users", admin.ResourceForm(userForm(user.Name, user.Email, action, nil))))
-	})
-	mux.HandleFunc("POST /admin/users/{id}/edit", func(w http.ResponseWriter, r *http.Request) {
-		id, ok := routeID(w, r)
-		if !ok {
-			return
-		}
-		name, email, errors := readUserForm(w, r)
-		if len(errors) > 0 {
-			action := fmt.Sprintf("/admin/users/%d/edit", id)
-			render(w, r, admin.Layout("Edit User", nav, "/admin/users", admin.ResourceForm(userForm(name, email, action, errors))))
-			return
-		}
-		if _, ok := store.Update(id, name, email); !ok {
-			http.NotFound(w, r)
-			return
-		}
-		http.Redirect(w, r, "/admin/users", http.StatusSeeOther)
-	})
-
-	mux.HandleFunc("GET /admin/users/{id}/delete", func(w http.ResponseWriter, r *http.Request) {
-		id, ok := routeID(w, r)
-		if !ok {
-			return
-		}
-		user, ok := store.Get(id)
-		if !ok {
-			http.NotFound(w, r)
-			return
-		}
-		render(w, r, admin.Layout("Delete User", nav, "/admin/users", admin.DeleteConfirmation(admin.DeleteConfig{
-			Title:      "Delete User",
-			ItemLabel:  user.Name,
-			Action:     fmt.Sprintf("/admin/users/%d/delete", id),
-			CancelHref: "/admin/users",
-		})))
-	})
-	mux.HandleFunc("POST /admin/users/{id}/delete", func(w http.ResponseWriter, r *http.Request) {
-		id, ok := routeID(w, r)
-		if !ok {
-			return
-		}
-		if !store.Delete(id) {
-			http.NotFound(w, r)
-			return
-		}
-		http.Redirect(w, r, "/admin/users", http.StatusSeeOther)
+	mux.HandleFunc("GET /admin/profile", func(w http.ResponseWriter, r *http.Request) {
+		render(w, r, admin.Layout("Profile", nav, "/admin/profile", ProfilePage()))
 	})
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -197,32 +174,31 @@ func NewMux(store *UserStore) *http.ServeMux {
 		}
 		http.NotFound(w, r)
 	})
+
 	return mux
 }
 
-func userForm(name, email, action string, errors map[string]string) admin.FormConfig {
-	method := "post"
-	return admin.FormConfig{
-		Title:       "User",
-		Action:      action,
-		Method:      method,
-		SubmitLabel: "Save",
-		CancelHref:  "/admin/users",
-		Errors:      errors,
-		Fields: []admin.FormField{
-			{Name: "name", Label: "Name", Value: name, Required: true},
-			{Name: "email", Label: "Email", Value: email, Type: "email", Required: true},
+func userToRow(user User) admin.TableRow {
+	return admin.TableRow{
+		ID: strconv.Itoa(user.ID),
+		Values: map[string]string{
+			"name":  user.Name,
+			"email": user.Email,
 		},
 	}
 }
 
-func readUserForm(w http.ResponseWriter, r *http.Request) (string, string, map[string]string) {
-	if err := r.ParseForm(); err != nil {
-		http.Error(w, "invalid form", http.StatusBadRequest)
-		return "", "", map[string]string{"form": "Invalid form submission"}
+func parseID(raw string) (int, bool) {
+	id, err := strconv.Atoi(raw)
+	if err != nil || id < 1 {
+		return 0, false
 	}
-	name := strings.TrimSpace(r.Form.Get("name"))
-	email := strings.TrimSpace(r.Form.Get("email"))
+	return id, true
+}
+
+func validateUserValues(values map[string]string) (string, string, map[string]string) {
+	name := strings.TrimSpace(values["name"])
+	email := strings.TrimSpace(values["email"])
 	errors := map[string]string{}
 	if name == "" {
 		errors["name"] = "Name is required"
@@ -235,25 +211,18 @@ func readUserForm(w http.ResponseWriter, r *http.Request) (string, string, map[s
 	return name, email, errors
 }
 
-func routeID(w http.ResponseWriter, r *http.Request) (int, bool) {
-	id, err := strconv.Atoi(r.PathValue("id"))
-	if err != nil || id < 1 {
-		http.NotFound(w, r)
-		return 0, false
-	}
-	return id, true
-}
-
 func render(w http.ResponseWriter, r *http.Request, component templ.Component) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := component.Render(r.Context(), w); err != nil {
+	var buf bytes.Buffer
+	if err := component.Render(r.Context(), &buf); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_, _ = buf.WriteTo(w)
 }
 
 func main() {
 	store := NewUserStore()
 	log.Println("Admin dashboard listening on http://localhost:8080")
-	log.Println("size of nav", len(nav))
 	log.Fatal(http.ListenAndServe(":8080", NewMux(store)))
 }

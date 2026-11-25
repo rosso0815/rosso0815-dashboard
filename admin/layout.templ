@@ -1,5 +1,17 @@
 package admin
 
+templ navLinks(nav []NavItem, currentPath string) {
+	<nav class="nav nav-pills flex-column" aria-label="Admin navigation">
+		for _, item := range nav {
+			if item.Href == currentPath {
+				<a class="nav-link active mb-1" href={ templ.SafeURL(item.Href) } aria-current="page">{ item.Label }</a>
+			} else {
+				<a class="nav-link text-dark mb-1" href={ templ.SafeURL(item.Href) }>{ item.Label }</a>
+			}
+		}
+	</nav>
+}
+
 templ Layout(title string, nav []NavItem, currentPath string, content templ.Component) {
 	<!DOCTYPE html>
 	<html lang="en">
@@ -12,20 +24,22 @@ templ Layout(title string, nav []NavItem, currentPath string, content templ.Comp
 		<body class="bg-light">
 			<div class="container-fluid p-0">
 				<div class="row g-0 min-vh-100">
-					<aside class="col-auto col-md-3 col-lg-2 bg-light text-black p-2 p-md-3">
-						<a class="d-none d-md-block mb-4 fw-bold text-white text-decoration-none" href="/">Admin Dashboard</a>
-						<a class="d-md-none mb-4 fw-bold text-white text-decoration-none" href="/" aria-label="Admin Dashboard">A</a>
-						<nav class="nav nav-pills flex-column" aria-label="Admin navigation">
-						for _, item := range nav {
-							if item.Href == currentPath {
-								<a class="nav-link active mb-1" href={ templ.SafeURL(item.Href) } aria-current="page">{ item.Label } 1</a>
-							} else {
-								<a class="nav-link text-black mb-1" href={ templ.SafeURL(item.Href) }>{ item.Label }</a>
-							}
-						}
-						</nav>
+					<aside class="col-12 col-md-3 col-lg-2 bg-white border-end text-dark p-3">
+						<div class="d-none d-md-block">
+							<a class="d-block mb-4 fw-bold text-dark text-decoration-none" href="/">Admin Dashboard</a>
+							@navLinks(nav, currentPath)
+						</div>
+						<details class="d-md-none">
+							<summary class="d-flex align-items-center justify-content-between fw-bold text-dark list-unstyled" style="cursor: pointer;">
+								<span>Admin Dashboard</span>
+								<span class="btn btn-outline-secondary btn-sm">Menu</span>
+							</summary>
+							<div class="pt-3">
+								@navLinks(nav, currentPath)
+							</div>
+						</details>
 					</aside>
-					<main class="col bg-light min-vh-100">
+					<main class="col-12 col-md-9 col-lg-10 bg-light">
 						<div class="container-fluid px-3 px-md-4 py-4">
 							@content
 						</div>

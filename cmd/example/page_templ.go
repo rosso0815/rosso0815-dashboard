@@ -9,7 +9,7 @@ package main
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-func UserListPage(table templ.Component) templ.Component {
+func ProfilePage() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -26,11 +26,7 @@ func UserListPage(table templ.Component) templ.Component {
 		}
 		ctx = templ.InitializeContext(ctx)
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"d-flex align-items-center justify-content-between mb-3\"><h1 class=\"h2 mb-0\">Users</h1><a class=\"btn btn-primary\" href=\"/admin/users/new\">Add User</a></div>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = table.Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section><div class=\"d-flex align-items-center justify-content-between mb-3\"><h1 class=\"h2 mb-0\">Profile</h1></div><div class=\"card p-4\"><h2 class=\"h5 mb-2\">Example Administrator</h2><p class=\"text-secondary mb-3\">This page demonstrates multi-item sidebar navigation and active-route highlighting using the shared admin layout.</p><div><a class=\"btn btn-outline-primary\" href=\"/admin/users\">Manage Users</a></div></div></section>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
